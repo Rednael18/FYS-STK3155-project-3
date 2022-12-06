@@ -1,7 +1,12 @@
+
+# This file consists of task a) and b); solving the heat equation with the forward Euler method
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-L = 1
+
+L = 1  # Length of the rod
 
 
 def u0(x):
@@ -56,6 +61,8 @@ def compute_temperature_gradient(dt, dx, T, stoptime=True, plot=True):
         ax.set_ylabel('t')
         ax.set_zlabel('u')
         plt.show()
+    
+    return u
 
 
     
