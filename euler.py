@@ -60,9 +60,42 @@ def compute_temperature_gradient(dt, dx, T, stoptime=True, plot=True):
         ax.set_xlabel('x')
         ax.set_ylabel('t')
         ax.set_zlabel('u')
+        ax.title.set_text('Temperature over time and space')
         plt.show()
     
     return u
 
+def analytical_solution(x, t):
+    """Return the analytical solution of the heat equation with initial condition u0"""
+    return np.exp(-np.pi**2*t)*np.sin(np.pi*x)
+
+
+compute_temperature_gradient(0.00001, 0.01, 1, plot=True)
+
+# Plot analytical solution
+x = np.linspace(0, L, 100)
+t = np.linspace(0, 1, 100)
+X, T = np.meshgrid(x, t)
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+ax.plot_surface(X, T, analytical_solution(X, T), cmap='viridis')
+ax.set_xlabel('x')
+ax.set_ylabel('t')
+ax.set_zlabel('u')
+ax.title.set_text('Analytical solution')
+plt.show()
+
+# Plot the error
+x = np.linspace(0, L, 101)
+t = np.linspace(0, 1, 100000)
+X, T = np.meshgrid(x, t)
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+ax.plot_surface(X, T, analytical_solution(X, T) - compute_temperature_gradient(0.00001, 0.01, 1, plot=False), cmap='viridis')
+ax.set_xlabel('x')
+ax.set_ylabel('t')
+ax.set_zlabel('u')
+ax.title.set_text('Forward Euler error')
+plt.show()
 
     
