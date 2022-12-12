@@ -11,7 +11,8 @@ class NeuralNetwork():
         activation="relu",
         output_activation="linear",
         cost_function = "mse",
-        regularization=0
+        regularization=0,
+        A=None
         ):
         """Initialize a neural network with the given layers and activation function.
         Parameters
@@ -56,10 +57,14 @@ class NeuralNetwork():
             self.cost_fn = self.mse
         elif cost_function == "diffusion":
             self.cost_fn = self.diffusion_cost
+        elif cost_function == "eigen":
+            self.cost_fn = self.eigen_cost
         else:
             raise ValueError("Invalid cost function.")
 
         self.regularization = regularization
+
+        self.A = A
     
     def _initialize_weights(self):
         weights = []
@@ -122,7 +127,18 @@ class NeuralNetwork():
             cost_sum += err_sqr
 
         return cost_sum /( np.size(x)*np.size(t) )
-        
+
+    def f_trial(self, x):
+        A = self.A
+        N = A.shape[0]
+        return ((x.T @ x ) * A + (1 - x.T @ A @ x) * np.identity(N)) @ x
+
+    def eigen_cost(self, output):
+        x0 = self.X
+        x = x0 + output
+        x = (x / np.linalg.norm(x)).T
+        f = self.f_trial(x)
+        return self.mse(x, f)
     
     def mse(self, y_pred, y_true):
         """Mean squared error cost function."""
@@ -197,6 +213,8 @@ class NeuralNetwork():
         activations, _ = self._forward_propagation()
         if self.cost_fn == self.diffusion_cost:
             cost = self.cost_fn(wb)
+        elif self.cost_fn == self.eigen_cost:
+            cost = self.cost_fn(activations[-1])
         else:
             cost = self.cost_fn(activations[-1], y)
 
@@ -265,7 +283,7 @@ def pde_solver_example():
     from gradient_descent import GradientDescent
     import matplotlib.pyplot as plt
     gd = GradientDescent(store_extra=True)
-    wb = gd.train(X, wb, X[:, 0], nn, 0.1, 100)
+    wb = gd.train(X, wb, X[:, 0], nn, 0.1, 10)
     plt.plot(gd.costs)
     plt.show()
 
@@ -280,7 +298,53 @@ def pde_solver_example():
     plt.show()
 
 
+def generate_symmetric(N=6, seed=89):
+    """Generate a symmetric matrix."""
+    #np.random.seed(seed)
+    A = np.random.rand(N, N)
+    return (A + A.T) / 2
+
+def eigvec_eigval_example():
+    from gradient_descent import GradientDescent
+
+    eigvec = np.array([-0.45195742 ,-0.63577615 ,-0.44818869 ,-0.43663496])   
+    N = 4
+    A = generate_symmetric(N, seed=280)
+    nn = NeuralNetwork([N, 20, 20, N], activation="relu", cost_function="eigen", A=A)
+    # print("eigencost", nn.eigen_cost(eigvec))
+    #np.random.seed(9996)
+    x = np.random.rand(1, N)
+    # A = np.array([[1, 2, 3, 4],
+    #              [2, 3, 4, 5],
+    #              [3, 4, 5, 6],
+    #              [4, 5, 6, 7]])
+    print(A)
+    print(x)
+    print("Initial cost: ", nn.cost(nn.wb(), x, np.array([0])))
+    print("Initial prediction: ", nn.predict(nn.wb(), x) )
+
+    # perform gradient descent
+    wb = nn.wb()
+    gd = GradientDescent(store_extra=True)
+
+
+    wb = gd.train(x, wb, x, nn, 0.01, 4000)
+    import matplotlib.pyplot as plt
+    plt.plot(gd.costs)
+    plt.show()
+    print("HOMEGROWN:")
+    v_pred = x + nn.predict(wb, x)
+    print(v_pred / np.linalg.norm(v_pred))
+
+    #print(np.linalg.norm(A @ v_pred) / np.linalg.norm(v_pred))
+    print("NUMPY:")
+    val, vec = np.linalg.eig(A)
+    print(val)
+    print(vec)
+
+
 def main():
-    pde_solver_example()
+    #pde_solver_example()
+    eigvec_eigval_example()
 if __name__ == "__main__":
     main()

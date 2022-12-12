@@ -79,11 +79,9 @@ class GradientDescent:
 
         if self.store_extra:
             # Store cost function and weight values for each epoch
-            self.costs = np.zeros(n_epochs + 1)
-            self.weights = np.zeros((n_epochs + 1, len(w)))
             # Store cost and weight values before training
-            self.costs[0] = model.cost(self.w, X, self.y)
-            self.weights[0] = w.flatten()
+            self.costs = [model.cost(self.w, X, self.y)]
+            self.weights = [w.flatten()]
             
         for epoch in range(1, n_epochs + 1):
             # Shuffle data
@@ -98,8 +96,8 @@ class GradientDescent:
                 self.w = self.update()
             # Store cost and weight values after each epoch
             if self.store_extra:
-                self.costs[epoch] = model.cost(self.w, X, y)
-                self.weights[epoch] = self.w.flatten()
+                self.costs.append(model.cost(self.w, X, y))
+                self.weights.append(self.w.flatten())
         
         return self.w
 
