@@ -1,5 +1,4 @@
 from feedforward_nn import NeuralNetwork
-from data_generation import generate_data_binary
 
 import numpy as np
 import pytest
