@@ -92,6 +92,7 @@ class NeuralNetwork():
         return np.where(z > 0, z, z * 0.01)
 
     def get_activation_fn(self, layer):
+        """Return the activation function for the given layer."""
         if layer == 0:
             return self.input_activation_fn
         elif layer == len(self.layers) - 1:
@@ -100,6 +101,7 @@ class NeuralNetwork():
             return self.activation_fn
 
     def diffusion_trial(self, xt, wb):
+        """Trial solution for the diffusion equation."""
         x, t = xt
         u = lambda xx: np.sin(np.pi*xx)
         N = self.predict(wb, xt)
@@ -107,6 +109,7 @@ class NeuralNetwork():
 
 
     def diffusion_cost(self, wb):
+        """Cost function for the diffusion equation."""
         x, t = self.X[:, 0], self.X[:, 1]
 
         cost_sum = 0
@@ -129,11 +132,13 @@ class NeuralNetwork():
         return cost_sum /( np.size(x)*np.size(t) )
 
     def f_trial(self, x):
+        """Trial value of f(x) for the eigenvalue problem."""
         A = self.A
         N = A.shape[0]
         return ((x.T @ x ) * A + (1 - x.T @ A @ x) * np.identity(N)) @ x
 
     def eigen_cost(self, output):
+        """Cost function for the eigenvalue problem."""
         x0 = self.X
         x = x0 + output
         x = (x / np.linalg.norm(x)).T
@@ -178,7 +183,7 @@ class NeuralNetwork():
         """Unflattens the weights and biases from a single vector.
         Parameters
         ----------
-        w_and_b: np.ndarray
+        wb: np.ndarray
             Vector of weights and biases.
         Returns
         -------
@@ -202,6 +207,21 @@ class NeuralNetwork():
         return weights, biases
 
     def cost(self, wb, X, y):
+        """Cost function for the neural network.
+        
+        Parameters
+        ----------
+        wb: np.ndarray
+            Vector of weights and biases.
+        X: np.ndarray
+            Input data.
+        y: np.ndarray
+            Output data.
+            
+        Returns
+        -------
+        cost: float
+            Cost of the neural network."""
         weights, biases = self.unflatten_weights_and_biases(wb)
         y = y.reshape(-1, 1)
 
@@ -226,6 +246,21 @@ class NeuralNetwork():
         return cost
 
     def gradient(self, wb, X, y):
+        """Compute the gradient of the cost function.
+        
+        Parameters
+        ----------
+        wb: np.ndarray
+            Vector of weights and biases.
+        X: np.ndarray
+            Input data.
+        y: np.ndarray
+            Output data.
+        
+        Returns
+        -------
+        gradient: np.ndarray
+            Gradient of the cost function."""
         weights, biases = self.unflatten_weights_and_biases(wb)
 
         self.X = X
@@ -239,24 +274,31 @@ class NeuralNetwork():
         return gradient(wb, X, y)
 
     def predict(self, wb, X):
+        """Predict the output of the neural network.
+        
+        Parameters
+        ----------
+        wb: np.ndarray
+            Vector of weights and biases.
+        X: np.ndarray
+            Input data.
+        
+        Returns
+        -------
+        prediction: np.ndarray
+            Prediction of the neural network:
+            1. For the diffusion problem, this is the function N in the trial solution.
+            2. For the eigenvalue problem, this is a function N such that 
+                x0 + N(x0) is an eigenvector."""
         weights, biases = self.unflatten_weights_and_biases(wb)
 
         self.X = X
         self.weights = weights
         self.biases = biases
         activations, _ = self._forward_propagation()
-        return activations[-1]
+        prediction = activations[-1]
+        return prediction
 
-
-def nn_example():
-    # Example case
-    nn = NeuralNetwork([2, 2, 1], cost_function="diffusion")
-    X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-    y = np.array([[0], [1], [1], [0]])
-    wb = nn.wb()
-    print("Initial weights and biases: ", wb.shape)
-    print("Initial cost: ", nn.cost(wb, X, y))
-    print("Initial gradient: ", nn.gradient(wb, X, y))
 
 def pde_solver_example():
     nn = NeuralNetwork([2, 2, 1], cost_function="diffusion")
@@ -298,53 +340,6 @@ def pde_solver_example():
     plt.show()
 
 
-def generate_symmetric(N=6, seed=89):
-    """Generate a symmetric matrix."""
-    #np.random.seed(seed)
-    A = np.random.rand(N, N)
-    return (A + A.T) / 2
-
-def eigvec_eigval_example():
-    from gradient_descent import GradientDescent
-
-    eigvec = np.array([-0.45195742 ,-0.63577615 ,-0.44818869 ,-0.43663496])   
-    N = 4
-    A = generate_symmetric(N, seed=280)
-    nn = NeuralNetwork([N, 20, 20, N], activation="relu", cost_function="eigen", A=A)
-    # print("eigencost", nn.eigen_cost(eigvec))
-    #np.random.seed(9996)
-    x = np.random.rand(1, N)
-    # A = np.array([[1, 2, 3, 4],
-    #              [2, 3, 4, 5],
-    #              [3, 4, 5, 6],
-    #              [4, 5, 6, 7]])
-    print(A)
-    print(x)
-    print("Initial cost: ", nn.cost(nn.wb(), x, np.array([0])))
-    print("Initial prediction: ", nn.predict(nn.wb(), x) )
-
-    # perform gradient descent
-    wb = nn.wb()
-    gd = GradientDescent(store_extra=True)
-
-
-    wb = gd.train(x, wb, x, nn, 0.01, 4000)
-    import matplotlib.pyplot as plt
-    plt.plot(gd.costs)
-    plt.show()
-    print("HOMEGROWN:")
-    v_pred = x + nn.predict(wb, x)
-    print(v_pred / np.linalg.norm(v_pred))
-
-    #print(np.linalg.norm(A @ v_pred) / np.linalg.norm(v_pred))
-    print("NUMPY:")
-    val, vec = np.linalg.eig(A)
-    print(val)
-    print(vec)
-
-
-def main():
-    #pde_solver_example()
-    eigvec_eigval_example()
 if __name__ == "__main__":
-    main()
+    pde_solver_example()
+    
