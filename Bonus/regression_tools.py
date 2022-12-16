@@ -226,6 +226,44 @@ def bootstrap(x, y, z, deg, model, B, test_size=0.25):
     return bias, variance, error
 
 
+def bootstrap_tree(X_train, X_test, z_train, z_test, model, B, test_size=0.25):
+    """Returns estimated distributions of beta estimators for a decision tree regressor."""
+    z_pred = np.empty((z_test.shape[0], B))
+    for i in range(B):
+        X_, z_ = resample(X_train, z_train)
+        model.fit(X_, z_)
+        z_pred[:,i] = model.predict(X_test)
+
+    bias = np.mean( (z_test - np.mean(z_pred, axis=1, keepdims=True))**2)
+    variance = np.mean( np.var(z_pred, axis=1, keepdims=True))
+    #error = np.mean( np.mean((z_test - z_pred)**2, axis=1, keepdims=True) )
+    return bias, variance
+
+def bootstrap_nn(X_train, X_test, z_train, z_test, model, B, test_size=0.25):
+    """Returns estimated distributions of beta estimators for a decision tree regressor."""
+    z_pred = np.empty((z_test.shape[0], B))
+    for i in range(B):
+        X_, z_ = resample(X_train, z_train)
+        model.fit(X_, z_)
+        z_pred[:,i] = model.predict(X_test).ravel()
+
+    bias = []
+    variance = []
+    mse = []
+
+    for i in range(len(z_test)):
+        bias.append((z_test[i] - np.mean(z_pred[i]))**2)
+        variance.append(np.var(z_pred[i])/np.mean(bias))
+        mse.append(np.mean((z_test[i] - z_pred[i])**2))
+
+    # Find the bias and variance for neural network
+    bias = np.mean(bias)
+    variance = np.mean(variance)
+    error = np.mean(mse)
+
+    return bias, variance, error
+
+
 def cross_validation(X, z, k_deg_fold, model):
     "Preformes Cross-Validation with model=linreg, X=design-matrix"
     "Returns arrays - MSE-train, MSE-test - with length k_deg_fold"

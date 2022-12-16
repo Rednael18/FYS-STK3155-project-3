@@ -4,45 +4,47 @@ import data_generation as dg
 import regression_tools as rt
 from sklearn import tree
 from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_breast_cancer as wbc
+from sklearn.datasets import load_wine as wine
+
 
 
 x, y, z, _ = dg.generate_data_Franke(1000, 0.1, seed=1)
 X = np.array([[x[i], y[i]] for i in range(len(x))])
 X_train, X_test, z_train, z_test = train_test_split(X, y, test_size=0.2)
-z_train = np.around(z_train*50)
-z_test = np.around(z_test*50)
+
 
 
 
 """
 # Load data
-data = wbc()
+data = win()
 X = data.data
 y = data.target
 
 # Split data into training and test sets
 X_TR, X_test, z_TR, z_test = train_test_split(X, y, test_size=0.2)
-X_train, X_val, z_train, z_val = train_test_split(X_TR, z_TR, test_size=0.2)
+X_train, X_test, z_train, z_test = train_test_split(X_TR, z_TR, test_size=0.2)
 n = X_train.shape[1]
 """
 
 
-max_depth_range = 15
-bias = []
-variance = []  # What do?
+max_depth_range = 1000
+bias_arr = []
+variance_arr = []
 
-for i in range(1, max_depth_range):
-    clf = tree.DecisionTreeClassifier(max_depth=i)
-    clf.fit(X_train, z_train)
+for i in [10]:
+    clf = tree.DecisionTreeRegressor(max_depth=i)
+    bias, variance = rt.bootstrap_tree(X_train, X_test, z_train, z_test, clf, 100)
+    plt.hist(bias.flatten(), bins=30)
+    plt.show()
+    plt.hist(variance, bins=30)
+    plt.show()
 
-    pred = clf.predict(X_test)
-    bias.append(1 - rt.accuracy(z_test, pred))
-    tree.plot_tree(clf, filled=True)
-    #plt.show()
-    plt.clf()
 
-plt.plot(np.linspace(1, max_depth_range, max_depth_range-1), bias)
+plt.plot(np.linspace(1, max_depth_range, max_depth_range-1), bias_arr, label='Bias')
+plt.plot(np.linspace(1, max_depth_range, max_depth_range-1), variance_arr, label='Variance')
+plt.xlabel('Max depth')
+plt.ylabel('Error')
+plt.legend()
 plt.show()
-
 
