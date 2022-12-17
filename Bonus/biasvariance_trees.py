@@ -8,43 +8,37 @@ from sklearn.datasets import load_wine as wine
 
 
 
-x, y, z, _ = dg.generate_data_Franke(1000, 0.1, seed=1)
+x, y, z, _ = dg.generate_data_Franke(500, 0.1, seed=1)
 X = np.array([[x[i], y[i]] for i in range(len(x))])
-X_train, X_test, z_train, z_test = train_test_split(X, y, test_size=0.2)
+X_train, X_test, z_train, z_test = train_test_split(X, z, test_size=0.25)
 
 
 
 
-"""
-# Load data
-data = win()
-X = data.data
-y = data.target
 
-# Split data into training and test sets
-X_TR, X_test, z_TR, z_test = train_test_split(X, y, test_size=0.2)
-X_train, X_test, z_train, z_test = train_test_split(X_TR, z_TR, test_size=0.2)
-n = X_train.shape[1]
-"""
-
-
-max_depth_range = 1000
+max_depth_range = 15
 bias_arr = []
 variance_arr = []
+error_arr = []
+print(f"Progress: {0} %", end="\r")
+x_vals = []
 
-for i in [10]:
+for i in range(1, max_depth_range):
+    x_vals.append(i)
+    #print("---------------Node size: ", i, "------------------")
     clf = tree.DecisionTreeRegressor(max_depth=i)
-    bias, variance = rt.bootstrap_tree(X_train, X_test, z_train, z_test, clf, 100)
-    plt.hist(bias.flatten(), bins=30)
-    plt.show()
-    plt.hist(variance, bins=30)
-    plt.show()
+    bias, variance, error = rt.bootstrap_tree(X_train, X_test, z_train, z_test, clf, 100)
+    bias_arr.append(bias)
+    variance_arr.append(variance)
+    error_arr.append(error)
+    print(f"Progress: {int(i/max_depth_range*100)} %", end="\r")
 
 
-plt.plot(np.linspace(1, max_depth_range, max_depth_range-1), bias_arr, label='Bias')
-plt.plot(np.linspace(1, max_depth_range, max_depth_range-1), variance_arr, label='Variance')
-plt.xlabel('Max depth')
-plt.ylabel('Error')
+plt.plot(x_vals, bias_arr, "--o", label='Bias^2', color='blue')
+plt.plot(x_vals, variance_arr, "--o", label='Variance', color='orange')
+plt.plot(x_vals, error_arr, "--o", label='Error', color='green')
+plt.title("Bias-variance tradeoff for decision tree regressor")
+plt.xlabel('Number of nodes in hidden layer')
+plt.ylabel('Error scores')
 plt.legend()
 plt.show()
-

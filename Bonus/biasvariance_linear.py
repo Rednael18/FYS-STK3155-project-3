@@ -56,7 +56,7 @@ for deg in degrees:
     variances.append(variance)
     errors.append(error)
 
-plt.plot(degrees, biases, "--o" , label="Bias^2$")
+plt.plot(degrees, biases, "--o" , label="Bias^2")
 plt.plot(degrees, variances, "--o" ,label="Variance")
 plt.plot(degrees, errors, "--o", label="Error")
 plt.title("Bias-variance tradeoff for OLS")
