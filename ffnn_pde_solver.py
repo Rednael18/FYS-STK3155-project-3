@@ -1,6 +1,12 @@
 import tensorflow as tf
 import numpy as np
 
+class EigenLoss(tf.keras.losses.Loss):
+    def __init__(self, model):
+        self.model = model
+        super().__init__()
+    #TODO
+
 class DiffusionLoss(tf.keras.losses.Loss):
     """This is a loss function for the diffusion equation. 
     It subclasses from keras loss functions."""
@@ -23,7 +29,7 @@ class DiffusionLoss(tf.keras.losses.Loss):
             tensor: the initial condition"""
         return tf.sin(np.pi * x)
 
-    def g_trial_tf(self, x, t):
+    def u_trial_tf(self, x, t):
         """Trial solution for the diffusion equation.
         
         Parameters:
@@ -51,8 +57,7 @@ class DiffusionLoss(tf.keras.losses.Loss):
             with tf.GradientTape(persistent=True) as grad2:
                 grad2.watch([x, t])
 
-                g = self.g_trial_tf(x, t)
-                # print("g", g)
+                g = self.u_trial_tf(x, t)
 
             dgdx = grad2.gradient(g, x)
             dgdt = grad2.gradient(g, t)
@@ -65,9 +70,10 @@ class PDESolver:
     def __init__(
         self, 
         hidden_layers, 
-        activation_function="relu",
         learning_rate=0.001,
-        regularization=0.
+        regularization=0.,
+        activation_function="tanh",
+        problem="diffusion",
         ):
         """Initialize the PDESolver class.
         
@@ -93,7 +99,16 @@ class PDESolver:
 
         self.model = tf.keras.models.Sequential(layers)
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        self.loss_fn = DiffusionLoss(self.model)
+
+        if problem == "diffusion":
+            self.loss_fn = DiffusionLoss(self.model)
+        elif problem == "eigen":
+            A = tf.convert_to_tensor(A, dtype=float)
+            x0 = tf.convert_to_tensor(x0, dtype=float)
+            self.loss_fn = EigenLoss(self.model, x0, A)
+        else:
+            raise ValueError("Problem must be either 'diffusion' or 'eigen'")
+
         self.model.compile(
             optimizer=optimizer,
             loss=self.loss_fn
@@ -108,7 +123,7 @@ class PDESolver:
             y (tensor): target values. Not in use.
             **kwargs: keyword arguments to pass to the keras fit function.
                 See https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit"""
-        x = tf.convert_to_tensor(x, dtype=tf.float64)
+        x = tf.convert_to_tensor(x, dtype=float)
         x = tf.expand_dims(x, axis=-1)
         self.model.fit(x, x, **kwargs)
 
@@ -119,3 +134,15 @@ class PDESolver:
         Parameters:
             x (tensor): design matrix"""
         return self.model(x, **kwargs).numpy()
+    
+    def get_cost(self, x):
+        """Compute the cost function for the model.
+        
+        Parameters:
+            x (np.ndarray): design matrix
+        
+        Returns:
+            tensor: the cost function"""
+        x = tf.convert_to_tensor(x, dtype=float)
+        x = tf.expand_dims(x, axis=-1)
+        return self.loss_fn(x, x).numpy()
