@@ -12,7 +12,7 @@ print("Problem c)")
 N = 400
 B = 100 # n_bootsraps 
 sigma2 = 0.1 # Variance of noise
-seed = 199
+seed = 2340
 
 # Generate data
 x, y, z, _ = dg.generate_data_Franke(N, sigma2, seed)
@@ -56,9 +56,10 @@ for deg in degrees:
     variances.append(variance)
     errors.append(error)
 
-plt.plot(degrees, biases, "--o" , label="Bias^2$")
+plt.plot(degrees, biases, "--o" , label="Bias^2")
 plt.plot(degrees, variances, "--o" ,label="Variance")
 plt.plot(degrees, errors, "--o", label="Error")
+plt.title("Bias-variance tradeoff for OLS")
 plt.xlabel("Polynomial order")
 plt.ylabel("Error scores")
 plt.legend()

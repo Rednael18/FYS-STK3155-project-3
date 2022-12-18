@@ -4,45 +4,41 @@ import data_generation as dg
 import regression_tools as rt
 from sklearn import tree
 from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_breast_cancer as wbc
+from sklearn.datasets import load_wine as wine
 
 
-x, y, z, _ = dg.generate_data_Franke(1000, 0.1, seed=1)
+
+x, y, z, _ = dg.generate_data_Franke(500, 0.1, seed=1)
 X = np.array([[x[i], y[i]] for i in range(len(x))])
-X_train, X_test, z_train, z_test = train_test_split(X, y, test_size=0.2)
-z_train = np.around(z_train*50)
-z_test = np.around(z_test*50)
+X_train, X_test, z_train, z_test = train_test_split(X, z, test_size=0.25)
 
 
 
-"""
-# Load data
-data = wbc()
-X = data.data
-y = data.target
-
-# Split data into training and test sets
-X_TR, X_test, z_TR, z_test = train_test_split(X, y, test_size=0.2)
-X_train, X_val, z_train, z_val = train_test_split(X_TR, z_TR, test_size=0.2)
-n = X_train.shape[1]
-"""
 
 
 max_depth_range = 15
-bias = []
-variance = []  # What do?
+bias_arr = []
+variance_arr = []
+error_arr = []
+print(f"Progress: {0} %", end="\r")
+x_vals = []
 
 for i in range(1, max_depth_range):
-    clf = tree.DecisionTreeClassifier(max_depth=i)
-    clf.fit(X_train, z_train)
+    x_vals.append(i)
+    #print("---------------Node size: ", i, "------------------")
+    clf = tree.DecisionTreeRegressor(max_depth=i)
+    bias, variance, error = rt.bootstrap_tree(X_train, X_test, z_train, z_test, clf, 100)
+    bias_arr.append(bias)
+    variance_arr.append(variance)
+    error_arr.append(error)
+    print(f"Progress: {int(i/max_depth_range*100)} %", end="\r")
 
-    pred = clf.predict(X_test)
-    bias.append(1 - rt.accuracy(z_test, pred))
-    tree.plot_tree(clf, filled=True)
-    #plt.show()
-    plt.clf()
 
-plt.plot(np.linspace(1, max_depth_range, max_depth_range-1), bias)
+plt.plot(x_vals, bias_arr, "--o", label='Bias^2', color='blue')
+plt.plot(x_vals, variance_arr, "--o", label='Variance', color='orange')
+plt.plot(x_vals, error_arr, "--o", label='Error', color='green')
+plt.title("Bias-variance tradeoff for decision tree regressor")
+plt.xlabel('Number of nodes in hidden layer')
+plt.ylabel('Error scores')
+plt.legend()
 plt.show()
-
-
