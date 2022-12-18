@@ -15,7 +15,7 @@ X_train, X_test, z_train, z_test = train_test_split(X, z, test_size=0.25)
 
 
 # Set up arrays for plotting
-max_node_range = 50
+max_node_range = 25
 bias_arr = []
 variance_arr = []
 error_arr = []
@@ -25,7 +25,7 @@ print(f"Progress: {progress} %", end="\r")
 
 
 # Loop over different number of nodes in hidden layer
-for i in range(1, max_node_range, 2):
+for i in range(1, max_node_range):
     x_vals.append(i)
     clf = MLPRegressor(hidden_layer_sizes=(i,), activation='logistic', solver='lbfgs', max_iter=2000)
     bias, variance, error = rt.bootstrap_nn(X_train, X_test, z_train, z_test, clf, 100)
