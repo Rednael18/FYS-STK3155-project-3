@@ -1,19 +1,5 @@
 import numpy as np
 
-def is_parallel(v1, v2, tol=1e-2):
-    """Check if two vectors are parallel.
-    
-    Parameters:
-        v1 (np.ndarray): the first vector
-        v2 (np.ndarray): the second vector
-        
-    Returns:
-        bool: True if the vectors are parallel, False otherwise"""
-    v1 = v1 / np.linalg.norm(v1)
-    v2 = v2 / np.linalg.norm(v2)
-    if v1[0] * v2[0] <0:
-        v2 *= -1
-    return np.linalg.norm(v1 - v2) < tol
     
 def is_linearly_dependent(v, vs, tol=1e-2):
     """Check if a vector is linearly dependent on a set of vectors.

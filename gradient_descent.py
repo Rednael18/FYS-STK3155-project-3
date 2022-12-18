@@ -1,4 +1,3 @@
-#%%
 import math
 
 import numpy as np
@@ -102,9 +101,38 @@ class GradientDescent:
         return self.w
 
     def delta_w(self, X, w, y, model, eta):
+        """Calculate the change in weights for a single batch.
+        
+        Parameters
+        ----------
+        X : np.array
+            Design matrix
+        w : np.array
+            Weight vector
+        y : np.array
+            Target vector
+        model : NeuralNetwork
+            Model to train
+        eta : float
+            Learning rate"""
         return self.momentum * self.momentum_param - eta * model.gradient(w, X, y)
 
     def delta_w_adam(self):
+        """Calculate the change in weights for a single batch using Adam.
+        
+        Parameters
+        ----------
+        X : np.array
+            Design matrix
+        w : np.array
+            Weight vector
+        y : np.array
+            Target vector
+        model : NeuralNetwork
+            Model to train
+        eta : float
+            Learning rate
+        """
         beta1 = 0.9
         beta2 = 0.999
         g = self.model.gradient(self.w, self.X_batch, self.y_batch)
@@ -129,6 +157,7 @@ class GradientDescent:
         return self.momentum * self.momentum_param - pre_momentum
 
     def adagrad(self):
+        """Calculate the learning rate scaling for a single batch using Adagrad."""
         if not hasattr(self, "G"):
             self.G = np.zeros((len(self.w), 1))
         epsi = 1e-8
@@ -136,6 +165,7 @@ class GradientDescent:
         return self.eta / np.sqrt(self.G + epsi)
     
     def rmsprop(self):
+        """Calculate the learning rate scaling for a single batch using RMSProp."""
         beta = 0.9
 
         g = self.model.gradient(self.w, self.X_batch, self.y_batch)
@@ -147,6 +177,7 @@ class GradientDescent:
         return self.eta / np.sqrt(self.s + eps)
     
     def update(self):
+        """Update the weights using the current batch."""
         X = self.X_batch
         w = self.w
         y = self.y_batch

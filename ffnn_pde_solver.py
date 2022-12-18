@@ -225,10 +225,13 @@ class PDESolver:
         
         Parameters:
             x (tensor): design matrix
+            **kwargs: keyword arguments to pass to the keras predict function.
+                See https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
             
         Returns:
             tensor: model predictions"""
         return self.model(x, **kwargs).numpy()
+    
     
     def get_cost(self, x):
         """Compute the cost function for the model.
@@ -241,6 +244,7 @@ class PDESolver:
         x = tf.convert_to_tensor(x, dtype=float)
         x = tf.expand_dims(x, axis=-1)
         return self.loss_fn(x, x).numpy()
+    
 
 if __name__ == "__main__":
     from trial_functions import x_trial_normalized, generate_symmetric

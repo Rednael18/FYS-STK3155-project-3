@@ -1,6 +1,7 @@
 import numpy as np
 
 # For the diffusion equation
+
 def u0(x):
     """Initial condition for the diffusion equation.
     
@@ -35,16 +36,24 @@ def u_analytical(x, t):
         np.ndarray: the analytical solution"""
     return np.exp(-np.pi**2*t)*np.sin(np.pi*x)
 
+
 # For the eigenvalue problem 
 
 def generate_symmetric(N=6, seed=89, old_version=False):
-    """Generate a N x N symmetric matrix."""
+    """Generate a N x N symmetric matrix.
+    
+    Parameters:
+        N (int): the size of the matrix
+        seed (int): the seed for the random number generator
+        old_version (bool): whether to use the old version of the function
+            Ie. whether to use np.random.rand or np.random.randn"""
     np.random.seed(seed)
     if old_version:
         A = np.random.rand(N, N)
     else:
         A = np.random.randn(N, N)
     return (A + A.T) / 2
+
 
 def x_trial_normalized(t, x0, N):
     """Trial solution for the eigenvalue problem.
@@ -60,3 +69,4 @@ def x_trial_normalized(t, x0, N):
     t = t.reshape(-1, 1)
     x = np.exp(-t) * x0 + (1 - np.exp(-t)) * N
     return x / np.linalg.norm(x, axis=1, keepdims=True)
+    

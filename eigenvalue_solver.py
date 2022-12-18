@@ -5,7 +5,18 @@ from gradient_descent import GradientDescent
 
 
 def generate_symmetric(N=6, seed=89):
-    """Generate a N x N symmetric matrix."""
+    """Generate a N x N symmetric matrix.
+    
+    Parameters
+    ----------
+    N : int
+        The size of the matrix
+    seed : int
+        The seed for the random number generator
+        
+    Returns
+    -------
+    A : np.ndarray"""
     np.random.seed(seed)
     A = np.random.rand(N, N)
     return (A + A.T) / 2
