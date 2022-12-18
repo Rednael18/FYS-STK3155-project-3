@@ -56,10 +56,7 @@ def x_trial_normalized(t, x0, N):
         
     Returns:
         np.ndarray: the normalized trial solution"""
-    print("x0", x0.shape)
-    print("N", N.shape)
-    print("t", t.shape)
     x0 = x0.reshape(1, -1)
     t = t.reshape(-1, 1)
     x = np.exp(-t) * x0 + (1 - np.exp(-t)) * N
-    return x / np.linalg.norm(x)
+    return x / np.linalg.norm(x, axis=1, keepdims=True)
