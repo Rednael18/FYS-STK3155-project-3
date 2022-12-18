@@ -12,7 +12,8 @@ class NeuralNetwork():
         output_activation="linear",
         cost_function = "mse",
         regularization=0,
-        A=None
+        A=None,
+        x0=None,
         ):
         """Initialize a neural network with the given layers and activation function.
         Parameters
@@ -59,12 +60,18 @@ class NeuralNetwork():
             self.cost_fn = self.diffusion_cost
         elif cost_function == "eigen":
             self.cost_fn = self.eigen_cost
+        elif cost_function == "eigen_ode":
+            self.cost_fn = self.eigen_ode_cost
         else:
             raise ValueError("Invalid cost function.")
 
         self.regularization = regularization
 
+        # Real, symmetric matrix for eigenvalue problem / eigenvalue ODE
         self.A = A
+
+        # Initial condition for eigenvalue ODE
+        self.x0 = x0
     
     def _initialize_weights(self):
         weights = []
@@ -131,19 +138,33 @@ class NeuralNetwork():
 
         return cost_sum /( np.size(x)*np.size(t) )
 
+
     def f_trial(self, x):
         """Trial value of f(x) for the eigenvalue problem."""
         A = self.A
         N = A.shape[0]
         return ((x.T @ x ) * A + (1 - x.T @ A @ x) * np.identity(N)) @ x
 
+
     def eigen_cost(self, output):
-        """Cost function for the eigenvalue problem."""
+        """Cost function for the eigenvalue problem. (equilibrium version)"""
         x0 = self.X
         x = x0 + output
         x = (x / np.linalg.norm(x)).T
         f = self.f_trial(x)
-        return self.mse(x, f)
+        return self.mse(x, f)  
+
+    def x_trial_ode(self, output):
+        """Trial value of x(t) for the eigenvalue ODE."""
+        t = self.X.reshape(1, -1)
+        x0 = self.x0.reshape(-1, 1)
+        return self.x0 * np.exp(-t) + (1 - np.exp(-t)) * output
+
+
+    def eigen_ode_cost(self, t):
+        pass
+
+
     
     def mse(self, y_pred, y_true):
         """Mean squared error cost function."""

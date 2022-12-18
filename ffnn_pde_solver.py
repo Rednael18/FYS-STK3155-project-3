@@ -74,20 +74,38 @@ class PDESolver:
         regularization=0.,
         activation_function="tanh",
         problem="diffusion",
+        A=None,
+        x0=None
         ):
         """Initialize the PDESolver class.
         
         Parameters:
             hidden_layers (list): list of the number of nodes in each hidden layer
-            activation_function (str): activation function to use in the hidden layers
-            optimizer (str): optimizer to use for training. Default is adam."""
+            learning_rate (float): learning rate for the optimizer
+            regularization (float): regularization parameter hidden layer weights
+            activation_function (str): activation function to use in the hidden layers.
+                default is 'tanh', but can be any of the keras activation functions.
+            problem (str): the problem to solve. Either 'diffusion' or 'eigen'
+            A (np.ndarray): the matrix A in the eigenvalue problem. Only used if
+                problem is 'eigen'
+            x0 (np.ndarray): the initial condition in the eigenvalue problem. Only
+                used if problem is 'eigen'
+            """
         regularizer = tf.keras.regularizers.l2(regularization)
+        if problem == "diffusion":
+            input_size = 2
+            output_size = 1
+        elif problem == "eigen":
+            assert A is not None
+            assert x0 is not None
+            input_size = 1
+            output_size = A.shape[0]
 
         layers = [tf.keras.layers.Dense(
             hidden_layers[0], 
             activation=activation_function,
             kernel_regularizer=regularizer,
-            input_shape=(2,)
+            input_shape=(input_size,)
             )]
         for i in range(1, len(hidden_layers)):
             layers.append(tf.keras.layers.Dense(
@@ -95,7 +113,7 @@ class PDESolver:
                 activation=activation_function,
                 kernel_regularizer=regularizer
                 ))
-        layers.append(tf.keras.layers.Dense(1))
+        layers.append(tf.keras.layers.Dense(output_size))
 
         self.model = tf.keras.models.Sequential(layers)
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
@@ -132,7 +150,10 @@ class PDESolver:
         """Gives model predictions
         
         Parameters:
-            x (tensor): design matrix"""
+            x (tensor): design matrix
+            
+        Returns:
+            tensor: model predictions"""
         return self.model(x, **kwargs).numpy()
     
     def get_cost(self, x):
@@ -146,3 +167,9 @@ class PDESolver:
         x = tf.convert_to_tensor(x, dtype=float)
         x = tf.expand_dims(x, axis=-1)
         return self.loss_fn(x, x).numpy()
+
+if __name__ == "__main__":
+    xt = np.random.rand(1000, 2)
+    solver = PDESolver([10, 10, 10], problem="diffusion")
+    solver.fit(xt)
+    print(solver.get_cost(xt))
