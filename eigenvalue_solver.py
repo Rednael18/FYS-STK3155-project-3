@@ -41,6 +41,7 @@ def compute_eigenvalues_eigenvectors(
     A,
     epochs=20000,
     learning_rate=0.005,
+    weight_scaling=100
     ):
     """Computes all eigenvalues and eigenvectors of A.
     
@@ -76,7 +77,7 @@ def compute_eigenvalues_eigenvectors(
 
         # Run the computation
         nn = NeuralNetwork([N, 20, 20, N], activation="relu", cost_function="eigen", A=A)
-        wb = nn.wb() / 100
+        wb = nn.wb() / weight_scaling
         gd = GradientDescent(mode="adam", momentum_param=0.5, store_extra=True)   
         wb = gd.train(x0, wb, x0, nn, learning_rate, epochs)
         eigenvector_candidate = x0 + nn.predict(wb, x0)
