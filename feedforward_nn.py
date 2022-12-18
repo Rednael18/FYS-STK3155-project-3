@@ -74,12 +74,14 @@ class NeuralNetwork():
         self.x0 = x0
     
     def _initialize_weights(self):
+        """Initialize weights to be random, normally distributed."""
         weights = []
         for i in range(len(self.layers) - 1):
             weights.append(np.random.normal(0, 1, (self.layers[i], self.layers[i+1])))
         return weights
 
     def _initialize_biases(self):
+        """Initialize biases to be zero."""
         biases = []
         for i in range(len(self.layers) - 1):
             #TODO: make zero?
@@ -160,15 +162,11 @@ class NeuralNetwork():
         x0 = self.x0.reshape(-1, 1)
         return self.x0 * np.exp(-t) + (1 - np.exp(-t)) * output
 
-
-    def eigen_ode_cost(self, t):
-        pass
-
-
     
     def mse(self, y_pred, y_true):
         """Mean squared error cost function."""
         return np.mean((y_pred - y_true)**2)
+
 
     def _forward_propagation(self):
         """Perform forward propagation to compute the activations and
@@ -191,14 +189,18 @@ class NeuralNetwork():
                 z = a @ W[layer] + b[layer]    
         
         return A, Z
-        
+
+
     def concatenated_weights_and_biases(self):
         """reshapes the weights and biases into a single column vector."""
         wb = np.concatenate([w.flatten() for w in self.weights] + [b.flatten() for b in self.biases])
         return wb.reshape(-1, 1)
 
+
     def wb(self):
+        """Returns the weights and biases as a single column vector."""
         return self.concatenated_weights_and_biases()
+
 
     def unflatten_weights_and_biases(self, wb):
         """Unflattens the weights and biases from a single vector.
@@ -226,6 +228,7 @@ class NeuralNetwork():
             biases.append(wb[start:end].reshape(1, self.layers[i+1]))
             start = end
         return weights, biases
+
 
     def cost(self, wb, X, y):
         """Cost function for the neural network.
@@ -266,6 +269,7 @@ class NeuralNetwork():
 
         return cost
 
+
     def gradient(self, wb, X, y):
         """Compute the gradient of the cost function.
         
@@ -293,6 +297,7 @@ class NeuralNetwork():
         # Compute gradient using autograd
         gradient = egrad(self.cost)
         return gradient(wb, X, y)
+
 
     def predict(self, wb, X):
         """Predict the output of the neural network.
