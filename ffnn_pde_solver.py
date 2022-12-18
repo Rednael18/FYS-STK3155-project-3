@@ -1,11 +1,85 @@
 import tensorflow as tf
 import numpy as np
 
+
 class EigenLoss(tf.keras.losses.Loss):
-    def __init__(self, model):
+    """This is a loss function for the differential equation described in a
+    paper by Yi and Fu (2004). https://doi.org/10.1016/S0898-1221(04)90110-1.
+    """
+    def __init__(self, model, x0, A):
+        """Initialize the loss function.
+
+        Parameters:
+            model (keras model): the model to be trained"""
         self.model = model
+        self.x0 = x0
+        self.A = A
         super().__init__()
-    #TODO
+
+
+    def f_tf(self, x):
+        """The function f(x) as described in the above paper.
+        
+        Parameters:
+            x (tensor): the x values
+        
+        Returns:
+            tensor: the function f(x)"""
+        A = self.A
+        N = A.shape[0]
+        x2 = tf.einsum("ij, ij -> i", x, x)
+        t1 = tf.einsum("i, jk -> ijk", x2, A)
+        xAx = tf.einsum("ij, ij -> i", x@A, x)
+
+        t2 = tf.einsum("i, jk -> ijk", (1 - xAx), tf.eye(N))
+        sol = tf.einsum("ijk, ik -> ij", t1 + t2, x)
+        return sol
+
+    def x_trial_tf(self, t):
+        """Trial value for vector valued function x(t).
+        
+        Parameters:
+            x (tensor): the x values
+            t (tensor): the t values
+        
+        Returns:
+            tensor: the right hand side"""
+        #x = (1 - t) * self.x0 + t * self.model(t)
+        x = tf.exp(-t) * self.x0 + (1 - tf.exp(-t)) * self.model(t)
+        return x
+
+    def rhs(self, t):
+        """Right hand side of the differential equation.
+        
+        Parameters:
+            t (tensor): the t values
+        
+        Returns:
+            tensor: the right hand side"""
+        x_trial = self.x_trial_tf(t)
+        return self.f_tf(x_trial) - x_trial
+
+
+    def __call__(self, t, y_pred, sample_weight=None):
+        """Compute the loss for the diffusion equation.
+        
+        Parameters:
+            t (tensor): time values
+            y_pred (tensor): the function N(t) given by the FFNN
+            sample_weight (tensor): To match the keras loss function signature.
+                Not in use.
+        Returns:
+            tensor: the loss (MSE between lhs and rhs of the diffusion equation)"""
+        x_trial = self.x_trial_tf(t)
+        
+        with tf.GradientTape() as grad:
+            grad.watch(t)
+            x_trial = self.x_trial_tf(t)
+        dxdt = grad.gradient(x_trial, t)
+
+        diff = dxdt - self.rhs(t) # lhs - rhs
+        return tf.reduce_mean(tf.square(diff))
+
 
 class DiffusionLoss(tf.keras.losses.Loss):
     """This is a loss function for the diffusion equation. 
@@ -169,7 +243,18 @@ class PDESolver:
         return self.loss_fn(x, x).numpy()
 
 if __name__ == "__main__":
-    xt = np.random.rand(1000, 2)
-    solver = PDESolver([10, 10, 10], problem="diffusion")
-    solver.fit(xt)
-    print(solver.get_cost(xt))
+    from trial_functions import x_trial_normalized, generate_symmetric
+    N = 3
+    A = generate_symmetric(N)
+    x0 = np.random.rand(N)
+
+    solver = PDESolver([10, 10, 10], problem="eigen", A=A, x0=x0)
+    t = np.linspace(0, 30, 100)
+    solver.fit(t)
+    
+    N = solver(t)
+    x_trial = x_trial_normalized(t, x0, N)
+    import matplotlib.pyplot as plt
+
+    plt.plot(t, x_trial)
+    plt.show()
